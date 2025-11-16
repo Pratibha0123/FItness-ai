@@ -25,11 +25,11 @@ const Footer = () => {
                 <ZapIcon className="w-5 h-5 text-primary animate-pulse" />
               </div>
               <span className="text-2xl font-bold font-mono tracking-tight">
-                code<span className="text-primary">flex</span>.ai
+           Sm<span className="text-primary">ar</span>t<span className="text-primary">Fit</span>.ai
               </span>
             </Link>
             <p className="text-sm text-muted-foreground mt-1">
-              © {new Date().getFullYear()} codeflex.ai - All rights reserved
+              © {new Date().getFullYear()} SmartFit.ai - All rights reserved
             </p>
           </div>
 

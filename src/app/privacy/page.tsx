@@ -11,7 +11,7 @@ const PrivacyPage = () => {
           <span className="text-primary">Privacy</span> Policy
         </h1>
         <p className="text-muted-foreground mb-4">
-          At CodeFlex.ai, your privacy is important. This Privacy Policy explains how we collect, use, and protect your information.
+          At SmartFit.ai, your privacy is important. This Privacy Policy explains how we collect, use, and protect your information.
         </p>
         <p className="text-muted-foreground mb-4">
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam.

@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
-import { DumbbellIcon, HomeIcon, UserIcon, ZapIcon } from "lucide-react";
+import { DumbbellIcon, HomeIcon, UserIcon, ZapIcon, HeartIcon } from "lucide-react"; // Added HeartIcon
 import Link from "next/link";
 import { Button } from "./ui/button";
 
@@ -16,11 +16,10 @@ const Navbar = () => {
             <ZapIcon className="w-5 h-5 text-primary" />
           </div>
           <span className="text-xl font-bold tracking-tight font-mono">
-            code<span className="text-primary">flex</span>.ai
+            Sm<span className="text-primary">ar</span>t<span className="text-primary">Fit</span>.ai
           </span>
         </Link>
 
-       
         <nav className="hidden md:flex items-center gap-6">
           {isSignedIn ? (
             <>
@@ -38,6 +37,14 @@ const Navbar = () => {
               >
                 <DumbbellIcon size={16} />
                 Generate
+              </Link>
+
+              <Link
+                href="/women-health"
+                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              >
+                <HeartIcon size={16} />
+                Women Health
               </Link>
 
               <Link

@@ -1,13 +1,13 @@
 "use client";
 
 import { motion, easeOut } from "framer-motion";
-// import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRightIcon } from "lucide-react";
 import TerminalOverlay from "@/components/TerminalOverlay";
 import UserPrograms from "@/components/UserPrograms";
-// import  hero_aifrom '../../public/hero-ai3.png';
+import  hero_ai from '../../public/hero-ai3.png';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
@@ -128,8 +128,8 @@ const HomePage = () => {
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                   className="relative overflow-hidden rounded-lg bg-cyber-black shadow-xl"
                 >
-                   <img
-                    src="/hero-ai3.png"
+                   <Image
+                    src={hero_ai}
                     alt="AI Fitness Coach"
                     className="size-full object-cover object-center"
                   />
@@ -149,8 +149,9 @@ const HomePage = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                 </motion.div>
 
-                <TerminalOverlay />
+                {/* <TerminalOverlay /> */}
               </div>
+              <TerminalOverlay />
             </motion.div>
           </div>
         </div>

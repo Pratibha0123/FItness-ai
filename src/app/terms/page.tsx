@@ -11,7 +11,7 @@ const TermsPage = () => {
           <span className="text-primary">Terms</span> of Service
         </h1>
         <p className="text-muted-foreground mb-4">
-          Welcome to CodeFlex.ai! By accessing or using our services, you agree to be bound by these Terms of Service.
+          Welcome to SmartFit.ai! By accessing or using our services, you agree to be bound by these Terms of Service.
         </p>
         <p className="text-muted-foreground mb-4">
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam.
