@@ -9,11 +9,26 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import AI_Assistants from "@/assets/ai_coach.png";
 
+// ------------------- FIXED TYPES -------------------
+interface ChatMessage {
+  role: "assistant" | "user" | "system";
+  content: string;
+}
+
+interface VapiMessage {
+  type: string;
+  transcript?: string;
+  transcriptType?: string;
+  role?: "assistant" | "user" | "system";
+}
+
+// ---------------------------------------------------
+
 const GenerateProgramPage = () => {
   const [callActive, setCallActive] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [messages, setMessages] = useState<unknown[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [callEnded, setCallEnded] = useState(false);
 
   const { user } = useUser();
@@ -21,75 +36,78 @@ const GenerateProgramPage = () => {
 
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
-  // Ignore "Meeting has ended" errors
+  // ---------------- FIXED ERROR HANDLING ----------------
   useEffect(() => {
     const originalError = console.error;
-    console.error = function (msg, ...args) {
+
+    console.error = function (msg: unknown, ...args: unknown[]) {
+      const msgStr = typeof msg === "string" ? msg : "";
+      const argStr = args[0] && typeof args[0] === "string" ? args[0] : "";
+
       if (
-        msg &&
-        (msg.includes("Meeting has ended") ||
-          (args[0] && args[0].toString().includes("Meeting has ended")))
+        msgStr.includes("Meeting has ended") ||
+        argStr.includes("Meeting has ended")
       ) {
         console.log("Ignoring known error: Meeting has ended");
         return;
       }
       return originalError.call(console, msg, ...args);
     };
+
     return () => {
       console.error = originalError;
     };
   }, []);
 
-  // Auto-scroll messages
+  // Auto-scroll
   useEffect(() => {
     if (messageContainerRef.current) {
-      messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+      messageContainerRef.current.scrollTop =
+        messageContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Redirect user after call ends
+  // Redirect after end
   useEffect(() => {
     if (callEnded) {
-      const redirectTimer = setTimeout(() => {
+      const timer = setTimeout(() => {
         router.push("/profile");
       }, 1500);
-      return () => clearTimeout(redirectTimer);
+
+      return () => clearTimeout(timer);
     }
   }, [callEnded, router]);
 
-  // VAPI Event Listeners
+  // ---------------- FIXED MESSAGE HANDLER ----------------
+  const handleMessage = (message: VapiMessage) => {
+    if (message.type === "transcript" && message.transcriptType === "final") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: message.role || "assistant",
+          content: message.transcript || "",
+        },
+      ]);
+    }
+  };
+
+  // VAPI EVENTS
   useEffect(() => {
     const handleCallStart = () => {
-      console.log("Call started");
       setConnecting(false);
       setCallActive(true);
       setCallEnded(false);
     };
 
     const handleCallEnd = () => {
-      console.log("Call ended");
       setCallActive(false);
       setConnecting(false);
       setIsSpeaking(false);
       setCallEnded(true);
     };
 
-    const handleSpeechStart = () => {
-      console.log("AI started Speaking");
-      setIsSpeaking(true);
-    };
-
-    const handleSpeechEnd = () => {
-      console.log("AI stopped Speaking");
-      setIsSpeaking(false);
-    };
-
-    const handleMessage = (message: any) => {
-      if (message.type === "transcript" && message.transcriptType === "final") {
-        const newMessage = { content: message.transcript, role: message.role };
-        setMessages((prev) => [...prev, newMessage]);
-      }
-    };
+    const handleSpeechStart = () => setIsSpeaking(true);
+    const handleSpeechEnd = () => setIsSpeaking(false);
 
     const handleError = (error: unknown) => {
       console.log("Vapi Error", error);
@@ -116,7 +134,7 @@ const GenerateProgramPage = () => {
     };
   }, []);
 
-  // ✅ Updated toggleCall with messages
+  // ------------------- FIXED CALL TOGGLE -------------------
   const toggleCall = async () => {
     if (callActive) {
       vapi.stop();
@@ -126,7 +144,7 @@ const GenerateProgramPage = () => {
         setMessages([]);
         setCallEnded(false);
 
-        // System message when Start Call is clicked
+        // System message
         setMessages([
           {
             role: "system",
@@ -145,7 +163,6 @@ const GenerateProgramPage = () => {
           },
         });
 
-        // Add AI greeting once connected
         setMessages((prev) => [
           ...prev,
           {
@@ -160,21 +177,23 @@ const GenerateProgramPage = () => {
         console.log("Failed to start call", error);
         setConnecting(false);
 
-        // Show error in UI
+        // Error message
         setMessages([
           {
             role: "system",
-            content: " Failed to connect. Please try again later.",
+            content: "❌ Failed to connect. Please try again later.",
           },
         ]);
       }
     }
   };
 
+  // ----------------------------------------------------------------
+
   return (
     <div className="flex flex-col min-h-screen text-foreground overflow-hidden pb-6 pt-24">
       <div className="container mx-auto px-4 h-full max-w-5xl">
-        {/* Title */}
+        {/* TITLE */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold font-mono">
             <span>Generate Your </span>
@@ -185,55 +204,24 @@ const GenerateProgramPage = () => {
           </p>
         </div>
 
-        {/* VIDEO CALL AREA */}
+        {/* TWO CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* AI ASSISTANT CARD */}
+          {/* AI CARD */}
           <Card className="bg-card/90 backdrop-blur-sm border border-border overflow-hidden relative">
             <div className="aspect-video flex flex-col items-center justify-center p-6 relative">
-              {/* AI VOICE ANIMATION */}
-              <div
-                className={`absolute inset-0 ${
-                  isSpeaking ? "opacity-30" : "opacity-0"
-                } transition-opacity duration-300`}
-              >
-                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex justify-center items-center h-20">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`mx-1 h-16 w-1 bg-primary rounded-full ${
-                        isSpeaking ? "animate-sound-wave" : ""
-                      }`}
-                      style={{
-                        animationDelay: `${i * 0.1}s`,
-                        height: isSpeaking ? `${Math.random() * 50 + 20}%` : "5%",
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* AI IMAGE */}
+              {/* AI AVATAR */}
               <div className="relative size-32 mb-4">
-                <div
-                  className={`absolute inset-0 bg-primary opacity-10 rounded-full blur-lg ${
-                    isSpeaking ? "animate-pulse" : ""
-                  }`}
+                <Image
+                  src={AI_Assistants}
+                  alt="AI Assistant"
+                  className="w-full h-full object-cover rounded-full"
                 />
-                <div className="relative w-full h-full rounded-full bg-card flex items-center justify-center border border-border overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-secondary/10"></div>
-                  
-              <Image
-  src={AI_Assistants}
-  alt="AI Assistant"
-  className="w-full h-full object-cover rounded-2xl"
-/>
-                </div>
               </div>
 
               <h2 className="text-xl font-bold text-foreground">CodeFlex AI</h2>
               <p className="text-sm text-muted-foreground mt-1">Fitness & Diet Coach</p>
 
-              {/* SPEAKING INDICATOR */}
+              {/* Speaking indicator */}
               <div
                 className={`mt-4 flex items-center gap-2 px-3 py-1 rounded-full bg-card border border-border ${
                   isSpeaking ? "border-primary" : ""
@@ -250,7 +238,7 @@ const GenerateProgramPage = () => {
                     : callActive
                     ? "Listening..."
                     : callEnded
-                    ? "Redirecting to profile..."
+                    ? "Redirecting..."
                     : "Waiting..."}
                 </span>
               </div>
@@ -261,31 +249,28 @@ const GenerateProgramPage = () => {
           <Card className="bg-card/90 backdrop-blur-sm border overflow-hidden relative">
             <div className="aspect-video flex flex-col items-center justify-center p-6 relative">
               <div className="relative size-32 mb-4">
-                <img
-                  src={user?.imageUrl}
+                <Image
+                  src={user?.imageUrl || "/default-user.png"}
                   alt="User"
+                  width={128}
+                  height={128}
                   className="size-full object-cover rounded-full"
                 />
               </div>
 
               <h2 className="text-xl font-bold text-foreground">You</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {user ? (user.firstName + " " + (user.lastName || "")).trim() : "Guest"}
+                {user ? `${user.firstName} ${user.lastName || ""}` : "Guest"}
               </p>
-
-              <div className="mt-4 flex items-center gap-2 px-3 py-1 rounded-full bg-card border">
-                <div className="w-2 h-2 rounded-full bg-muted" />
-                <span className="text-xs text-muted-foreground">Ready</span>
-              </div>
             </div>
           </Card>
         </div>
 
-        {/* MESSAGE CONTAINER */}
+        {/* MESSAGE BOX */}
         {messages.length > 0 && (
           <div
             ref={messageContainerRef}
-            className="w-full bg-card/90 backdrop-blur-sm border border-border rounded-xl p-4 mb-8 h-64 overflow-y-auto transition-all duration-300 scroll-smooth"
+            className="w-full bg-card/90 backdrop-blur-sm border border-border rounded-xl p-4 mb-8 h-64 overflow-y-auto"
           >
             <div className="space-y-3">
               {messages.map((msg, index) => (
@@ -293,8 +278,8 @@ const GenerateProgramPage = () => {
                   <div className="font-semibold text-xs text-muted-foreground mb-1">
                     {msg.role === "assistant"
                       ? "CodeFlex AI"
-                      // : msg.role === "system"
-                      // ? "System"
+                      : msg.role === "system"
+                      ? "System"
                       : "You"}
                     :
                   </div>
@@ -305,9 +290,7 @@ const GenerateProgramPage = () => {
               {callEnded && (
                 <div className="message-item animate-fadeIn">
                   <div className="font-semibold text-xs text-primary mb-1">System:</div>
-                  <p className="text-foreground">
-                    Your fitness program has been created! Redirecting to your profile...
-                  </p>
+                  <p>Your fitness program has been created! Redirecting…</p>
                 </div>
               )}
             </div>
@@ -315,31 +298,25 @@ const GenerateProgramPage = () => {
         )}
 
         {/* CALL BUTTON */}
-        <div className="w-full flex justify-center gap-4">
+        <div className="w-full flex justify-center">
           <Button
             className={`w-40 text-xl rounded-3xl ${
               callActive
-                ? "bg-destructive hover:bg-destructive/90"
+                ? "bg-destructive"
                 : callEnded
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-primary hover:bg-primary/90"
-            } text-white relative`}
+                ? "bg-green-600"
+                : "bg-primary"
+            } text-white`}
             onClick={toggleCall}
             disabled={connecting || callEnded}
           >
-            {connecting && (
-              <span className="absolute inset-0 rounded-full animate-ping bg-primary/50 opacity-75"></span>
-            )}
-
-            <span>
-              {callActive
-                ? "End Call"
-                : connecting
-                ? "Connecting..."
-                : callEnded
-                ? "View Profile"
-                : "Start Call"}
-            </span>
+            {callActive
+              ? "End Call"
+              : connecting
+              ? "Connecting..."
+              : callEnded
+              ? "View Profile"
+              : "Start Call"}
           </Button>
         </div>
       </div>
