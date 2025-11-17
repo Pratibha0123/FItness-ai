@@ -9,27 +9,16 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import AI_Assistants from "@/assets/ai_coach.png";
 
-interface Message {
-  role: "user" | "assistant" | "system";
-  content: string;
-}
-
-interface VapiMessage {
-  type: "transcript" | string;
-  transcriptType?: "final" | string;
-  transcript?: string;
-  role: "user" | "assistant" | "system";
-}
-
 const GenerateProgramPage = () => {
   const [callActive, setCallActive] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<unknown[]>([]);
   const [callEnded, setCallEnded] = useState(false);
 
   const { user } = useUser();
   const router = useRouter();
+
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
   // Ignore "Meeting has ended" errors
@@ -71,33 +60,39 @@ const GenerateProgramPage = () => {
   // VAPI Event Listeners
   useEffect(() => {
     const handleCallStart = () => {
+      console.log("Call started");
       setConnecting(false);
       setCallActive(true);
       setCallEnded(false);
     };
 
     const handleCallEnd = () => {
+      console.log("Call ended");
       setCallActive(false);
       setConnecting(false);
       setIsSpeaking(false);
       setCallEnded(true);
     };
 
-    const handleSpeechStart = () => setIsSpeaking(true);
-    const handleSpeechEnd = () => setIsSpeaking(false);
+    const handleSpeechStart = () => {
+      console.log("AI started Speaking");
+      setIsSpeaking(true);
+    };
 
-    const handleMessage = (message: VapiMessage) => {
+    const handleSpeechEnd = () => {
+      console.log("AI stopped Speaking");
+      setIsSpeaking(false);
+    };
+
+    const handleMessage = (message: any) => {
       if (message.type === "transcript" && message.transcriptType === "final") {
-        const newMessage: Message = {
-          content: message.transcript || "",
-          role: message.role,
-        };
+        const newMessage = { content: message.transcript, role: message.role };
         setMessages((prev) => [...prev, newMessage]);
       }
     };
 
-    const handleError = (_error: unknown) => {
-      console.log("Vapi Error", _error);
+    const handleError = (error: unknown) => {
+      console.log("Vapi Error", error);
       setConnecting(false);
       setCallActive(false);
     };
@@ -121,7 +116,7 @@ const GenerateProgramPage = () => {
     };
   }, []);
 
-  // Toggle Call
+  // ✅ Updated toggleCall with messages
   const toggleCall = async () => {
     if (callActive) {
       vapi.stop();
@@ -131,7 +126,7 @@ const GenerateProgramPage = () => {
         setMessages([]);
         setCallEnded(false);
 
-        // System message
+        // System message when Start Call is clicked
         setMessages([
           {
             role: "system",
@@ -150,6 +145,7 @@ const GenerateProgramPage = () => {
           },
         });
 
+        // Add AI greeting once connected
         setMessages((prev) => [
           ...prev,
           {
@@ -160,14 +156,15 @@ const GenerateProgramPage = () => {
 
         setConnecting(false);
         setCallActive(true);
-      } catch (_error) {
-        console.log("Failed to start call", _error);
+      } catch (error) {
+        console.log("Failed to start call", error);
         setConnecting(false);
 
+        // Show error in UI
         setMessages([
           {
             role: "system",
-            content: "Failed to connect. Please try again later.",
+            content: " Failed to connect. Please try again later.",
           },
         ]);
       }
@@ -175,7 +172,7 @@ const GenerateProgramPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen text-foreground overflow-hidden pb-6 pt-24 bg-background">
+    <div className="flex flex-col min-h-screen text-foreground overflow-hidden pb-6 pt-24">
       <div className="container mx-auto px-4 h-full max-w-5xl">
         {/* Title */}
         <div className="text-center mb-8">
@@ -194,12 +191,18 @@ const GenerateProgramPage = () => {
           <Card className="bg-card/90 backdrop-blur-sm border border-border overflow-hidden relative">
             <div className="aspect-video flex flex-col items-center justify-center p-6 relative">
               {/* AI VOICE ANIMATION */}
-              <div className={`absolute inset-0 ${isSpeaking ? "opacity-30" : "opacity-0"} transition-opacity duration-300`}>
+              <div
+                className={`absolute inset-0 ${
+                  isSpeaking ? "opacity-30" : "opacity-0"
+                } transition-opacity duration-300`}
+              >
                 <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex justify-center items-center h-20">
                   {[...Array(5)].map((_, i) => (
                     <div
                       key={i}
-                      className={`mx-1 h-16 w-1 bg-primary rounded-full ${isSpeaking ? "animate-sound-wave" : ""}`}
+                      className={`mx-1 h-16 w-1 bg-primary rounded-full ${
+                        isSpeaking ? "animate-sound-wave" : ""
+                      }`}
                       style={{
                         animationDelay: `${i * 0.1}s`,
                         height: isSpeaking ? `${Math.random() * 50 + 20}%` : "5%",
@@ -211,14 +214,19 @@ const GenerateProgramPage = () => {
 
               {/* AI IMAGE */}
               <div className="relative size-32 mb-4">
-                <div className={`absolute inset-0 bg-primary opacity-10 rounded-full blur-lg ${isSpeaking ? "animate-pulse" : ""}`} />
+                <div
+                  className={`absolute inset-0 bg-primary opacity-10 rounded-full blur-lg ${
+                    isSpeaking ? "animate-pulse" : ""
+                  }`}
+                />
                 <div className="relative w-full h-full rounded-full bg-card flex items-center justify-center border border-border overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-secondary/10"></div>
-                  <Image
-                    src={AI_Assistants}
-                    alt="AI Assistant"
-                    className="w-full h-full object-cover rounded-2xl"
-                  />
+                  
+              <Image
+  src={AI_Assistants}
+  alt="AI Assistant"
+  className="w-full h-full object-cover rounded-2xl"
+/>
                 </div>
               </div>
 
@@ -226,8 +234,16 @@ const GenerateProgramPage = () => {
               <p className="text-sm text-muted-foreground mt-1">Fitness & Diet Coach</p>
 
               {/* SPEAKING INDICATOR */}
-              <div className={`mt-4 flex items-center gap-2 px-3 py-1 rounded-full bg-card border ${isSpeaking ? "border-primary" : ""}`}>
-                <div className={`w-2 h-2 rounded-full ${isSpeaking ? "bg-primary animate-pulse" : "bg-muted"}`} />
+              <div
+                className={`mt-4 flex items-center gap-2 px-3 py-1 rounded-full bg-card border border-border ${
+                  isSpeaking ? "border-primary" : ""
+                }`}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    isSpeaking ? "bg-primary animate-pulse" : "bg-muted"
+                  }`}
+                />
                 <span className="text-xs text-muted-foreground">
                   {isSpeaking
                     ? "Speaking..."
@@ -245,12 +261,10 @@ const GenerateProgramPage = () => {
           <Card className="bg-card/90 backdrop-blur-sm border overflow-hidden relative">
             <div className="aspect-video flex flex-col items-center justify-center p-6 relative">
               <div className="relative size-32 mb-4">
-                <Image
-                  src={user?.imageUrl || "/default-user.png"}
+                <img
+                  src={user?.imageUrl}
                   alt="User"
-                  width={120}
-                  height={120}
-                  className="rounded-full object-cover"
+                  className="size-full object-cover rounded-full"
                 />
               </div>
 
@@ -277,7 +291,12 @@ const GenerateProgramPage = () => {
               {messages.map((msg, index) => (
                 <div key={index} className="message-item animate-fadeIn">
                   <div className="font-semibold text-xs text-muted-foreground mb-1">
-                    {msg.role === "assistant" ? "CodeFlex AI" : "You"}:
+                    {msg.role === "assistant"
+                      ? "CodeFlex AI"
+                      // : msg.role === "system"
+                      // ? "System"
+                      : "You"}
+                    :
                   </div>
                   <p className="text-foreground">{msg.content}</p>
                 </div>
